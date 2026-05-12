@@ -1,0 +1,752 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#1a1a1a"/>
+<title>Mi Portafolio IOL</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.js" integrity="sha384-iU8HYtnGQ8Cy4zl7gbNMOhsDTTKX02BTXptVP/vqAWIaTfM7isw76iyZCsjL2eVi" crossorigin="anonymous"></script>
+<style>
+:root {
+  --bg: #fafaf7; --surface: #fff; --border: #e7e5df;
+  --text: #1a1a1a; --muted: #6b7280; --accent: #6366f1;
+  --green: #15803d; --red: #b91c1c; --yellow: #92400e;
+  --radius: 12px; --gap: 12px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, BlinkMacSystemFont, system-ui, sans-serif; min-height: 100dvh; }
+
+/* ── Login ── */
+#loginScreen {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 100dvh; padding: 24px;
+}
+.login-box {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 28px 24px; width: 100%; max-width: 380px;
+}
+.login-logo { font-size: 28px; font-weight: 700; margin-bottom: 4px; }
+.login-sub  { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .04em; }
+.field input {
+  width: 100%; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px;
+  font-size: 16px; /* prevent iOS zoom */ background: var(--bg); color: var(--text);
+  outline: none; transition: border-color .15s;
+}
+.field input:focus { border-color: var(--accent); }
+.btn-primary {
+  width: 100%; padding: 13px; background: var(--accent); color: #fff; border: none;
+  border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer;
+  margin-top: 4px; transition: opacity .15s;
+}
+.btn-primary:active { opacity: .85; }
+.btn-primary:disabled { opacity: .5; cursor: not-allowed; }
+.login-note { font-size: 11px; color: var(--muted); margin-top: 14px; text-align: center; line-height: 1.5; }
+.login-err  { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 14px; display: none; }
+
+/* ── App shell ── */
+#app { display: none; }
+.topbar {
+  position: sticky; top: 0; z-index: 10;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+}
+.topbar-title { font-weight: 700; font-size: 16px; flex: 1; }
+.topbar-mep   { font-size: 12px; color: var(--muted); }
+.btn-icon {
+  background: none; border: 1px solid var(--border); border-radius: 8px;
+  padding: 7px 10px; cursor: pointer; font-size: 13px; color: var(--text);
+  display: flex; align-items: center; gap: 4px;
+}
+.btn-icon:active { background: var(--bg); }
+.spinning { animation: spin .8s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.scroll { padding: 14px 12px; max-width: 700px; margin: 0 auto; }
+
+/* ── Cards ── */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: var(--gap); }
+.card-title { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; font-weight: 600; }
+.kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+.kpi-big { font-size: 20px; font-weight: 700; line-height: 1.2; }
+.kpi-sub { font-size: 12px; color: var(--muted); margin-top: 3px; }
+
+/* ── Pills ── */
+.pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; }
+.pill-green  { background: #dcfce7; color: #166534; }
+.pill-yellow { background: #fef3c7; color: #92400e; }
+.pill-red    { background: #fee2e2; color: #991b1b; }
+.pill-blue   { background: #e0e7ff; color: #3730a3; }
+.pill-purple { background: #ede9fe; color: #5b21b6; }
+
+/* ── Alertas ── */
+.alert { padding: 10px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 8px; line-height: 1.5; }
+.alert-ok     { background: #f0fdf4; border: 1px solid #bbf7d0; color: #14532d; }
+.alert-warn   { background: #fffbeb; border: 1px solid #fde68a; color: #78350f; }
+.alert-bad    { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+.alert-info   { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+
+/* ── Mix bar ── */
+.mix-row { display: flex; flex-direction: column; gap: 8px; }
+.mix-item { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.mix-label { width: 120px; flex-shrink: 0; font-size: 12px; }
+.mix-bar-bg { flex: 1; background: #f3f4f6; border-radius: 99px; height: 8px; overflow: hidden; position: relative; }
+.mix-bar-fill { height: 100%; border-radius: 99px; transition: width .5s; }
+.mix-target-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #9ca3af; opacity: .7; }
+.mix-pct { width: 38px; text-align: right; font-size: 12px; font-weight: 600; }
+.mix-status { font-size: 11px; }
+
+/* ── Tabla posiciones ── */
+.pos-list { display: flex; flex-direction: column; gap: 8px; }
+.pos-item { display: flex; align-items: center; gap: 8px; padding: 10px 0; border-bottom: 1px dashed var(--border); }
+.pos-item:last-child { border-bottom: none; }
+.pos-sym { font-weight: 700; font-size: 14px; min-width: 56px; }
+.pos-meta { flex: 1; }
+.pos-cat { font-size: 11px; color: var(--muted); }
+.pos-right { text-align: right; }
+.pos-val { font-weight: 600; font-size: 13px; }
+.pos-pct { font-size: 12px; }
+.pos-bar { height: 3px; border-radius: 99px; margin-top: 4px; }
+.pos-chg { font-size: 11px; font-weight: 600; }
+.green { color: var(--green); }
+.red   { color: var(--red); }
+.muted { color: var(--muted); }
+
+/* ── Recomendaciones ── */
+.rec-tabs { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; }
+.rec-tab {
+  padding: 6px 12px; border: 1px solid var(--border); border-radius: 20px;
+  background: var(--bg); cursor: pointer; font-size: 12px; font-weight: 600;
+  white-space: nowrap; display: flex; align-items: center; gap: 5px;
+  flex-shrink: 0;
+}
+.rec-tab.active { background: var(--text); color: #fff; border-color: var(--text); }
+.rec-badge { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; font-size: 9px; font-weight: 700; }
+.rec-tab.active .rec-badge { background: rgba(255,255,255,.25); }
+.rec-tab:not(.active) .rec-badge { background: #e5e7eb; color: #374151; }
+.rec-tab:not(.active) .rec-badge.hot { background: #fee2e2; color: #991b1b; }
+.rec-tab:not(.active) .rec-badge.warm { background: #fef3c7; color: #92400e; }
+.rec-panel { display: none; }
+.rec-panel.active { display: block; }
+
+.rec-card { border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+.rec-card.urgent { border-color: #fca5a5; background: #fff5f5; }
+.rec-card.warn   { border-color: #fde68a; background: #fffdf0; }
+.rec-card-hd { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.rec-card-sub { font-size: 12px; color: #374151; margin-bottom: 10px; line-height: 1.5; }
+.rec-opts { display: flex; flex-direction: column; gap: 6px; }
+.rec-opt { display: flex; align-items: flex-start; gap: 8px; padding: 9px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; }
+.rec-opt-sym { font-weight: 700; font-size: 13px; min-width: 60px; flex-shrink: 0; }
+.rec-opt-desc { font-size: 12px; color: #374151; flex: 1; line-height: 1.5; }
+.rec-opt-tag { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 99px; flex-shrink: 0; align-self: flex-start; }
+
+.conc-bar-wrap { margin: 6px 0 10px; }
+.conc-bar-bg { background: #f3f4f6; border-radius: 6px; height: 10px; position: relative; overflow: hidden; }
+.conc-bar-fill { height: 100%; border-radius: 6px; }
+.conc-limit-line { position: absolute; top: 0; bottom: 0; width: 2px; background: #dc2626; opacity: .8; }
+.conc-bar-labels { display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; margin-top: 2px; }
+
+/* ── Estados ── */
+.loading-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; gap: 12px; color: var(--muted); font-size: 13px; }
+.spinner { font-size: 28px; }
+.error-box { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; padding: 14px; border-radius: 10px; font-size: 13px; line-height: 1.6; }
+
+/* ── Glosario ── */
+details.glosario { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 14px; margin-bottom: var(--gap); }
+details.glosario summary { cursor: pointer; font-weight: 600; font-size: 13px; }
+.glosario-body { font-size: 12px; color: #374151; margin-top: 8px; line-height: 1.8; }
+
+/* ── Logout ── */
+.logout-row { text-align: center; padding: 8px 0 20px; }
+.btn-logout { background: none; border: none; color: var(--muted); font-size: 12px; cursor: pointer; text-decoration: underline; }
+</style>
+</head>
+<body>
+
+<!-- ════════ LOGIN ════════ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">📈 Mi Portafolio</div>
+    <div class="login-sub">Conectate con tu usuario de IOL</div>
+    <div id="loginErr" class="login-err"></div>
+    <div class="field">
+      <label>Usuario IOL</label>
+      <input id="iolUser" type="text" autocomplete="username" placeholder="tu usuario de IOL"/>
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="iolPass" type="password" autocomplete="current-password" placeholder="••••••••"/>
+    </div>
+    <button id="loginBtn" class="btn-primary">Entrar</button>
+    <p class="login-note">Tu usuario y contraseña nunca se guardan.<br>Solo se almacena el token de sesión en este dispositivo.</p>
+  </div>
+</div>
+
+<!-- ════════ APP ════════ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title">Mi Portafolio</div>
+    <div class="topbar-mep" id="mepLabel">MEP: —</div>
+    <button class="btn-icon" id="refreshBtn">↻ Actualizar</button>
+  </div>
+
+  <div class="scroll" id="mainContent">
+    <div class="loading-screen">
+      <div class="spinner spinning">↻</div>
+      <div>Cargando portafolio…</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ═══════════════════════════════
+   CONFIGURACIÓN
+═══════════════════════════════ */
+// Si IOL bloquea CORS, cambiá API_BASE por tu proxy de Cloudflare:
+// const API_BASE = 'https://tu-proxy.workers.dev';
+const API_BASE = 'https://wseiguer.github.io/portafolio-iol/';
+
+const TARGET    = { equity: 0.30, rf_ars: 0.30, rf_usd: 0.40 };
+const CONC_MAX  = 10; // % máximo por activo
+
+const VENCIMIENTOS = {
+  AL30:  { fecha: "09/07/2030", nota: "Bono soberano USD step-up" },
+  GD35:  { fecha: "09/07/2035", nota: "Global USD (leg. NY)" },
+  TX26:  { fecha: "09/11/2026", nota: "Boncer CER 2026" },
+  TX28:  { fecha: "09/11/2028", nota: "Boncer CER 2028" },
+  MTCGO: { fecha: "30/06/2026", nota: "ON Mastellone 10,95%" },
+  YMCXO: { fecha: "11/09/2031", nota: "ON YPF 8,75%" },
+};
+
+const ROLLOVER = {
+  MTCGO: [
+    { sym:"YMCXO",   label:"ON YPF 8,75% 2031",           tag:"Misma categoría", tagCls:"pill-green", desc:"También es una ON corporativa en USD. Más plazo, riesgo similar." },
+    { sym:"GD35",    label:"Bono Global 2035",             tag:"Soberano USD",    tagCls:"pill-blue",  desc:"Más liquidez, legislación NY." },
+    { sym:"PRPEDOB", label:"FCI Premier Performance USD",  tag:"Liquidez total",  tagCls:"pill-purple",desc:"Usalo mientras decidís el destino definitivo." },
+  ],
+  TX26: [
+    { sym:"TX28",    label:"Boncer CER 2028",              tag:"Mismo tipo",      tagCls:"pill-green", desc:"Mismo instrumento, vence 2 años más tarde." },
+    { sym:"CRTAFAA", label:"FCI Adcap Renta Fija ARS",     tag:"Liquidez total",  tagCls:"pill-purple",desc:"Rescatás al día hábil siguiente." },
+  ],
+  AL30: [
+    { sym:"GD35",    label:"Bono Global 2035 (leg. NY)",   tag:"Mismo perfil",    tagCls:"pill-green", desc:"Soberano USD, mejor protección jurídica." },
+    { sym:"YMCXO",   label:"ON YPF 8,75% 2031",           tag:"Corporativa USD",  tagCls:"pill-blue",  desc:"Tasa más alta, menor liquidez." },
+  ],
+  GD35: [
+    { sym:"AL30",    label:"Bono AL30 2030",               tag:"Más corto",       tagCls:"pill-green", desc:"Mismo perfil soberano, vencimiento anterior." },
+    { sym:"YMCXO",   label:"ON YPF 8,75% 2031",           tag:"Corporativa USD",  tagCls:"pill-blue",  desc:"Menor duration, mayor tasa." },
+  ],
+};
+
+const CONC_ALTS = {
+  equity: [
+    { sym:"SPY",  label:"CEDEAR S&P 500",     tag:"CEDEAR USD",   tagCls:"pill-purple", desc:"Las 500 mayores empresas de EE.UU. en un solo activo." },
+    { sym:"AMZN", label:"CEDEAR Amazon",       tag:"CEDEAR USD",   tagCls:"pill-purple", desc:"Tecnología/comercio global." },
+    { sym:"KO",   label:"CEDEAR Coca-Cola",    tag:"Defensivo",    tagCls:"pill-blue",   desc:"Muy estable, baja volatilidad." },
+    { sym:"GGAL", label:"Banco Galicia",       tag:"Acción AR",    tagCls:"pill-yellow", desc:"Exposición al sistema financiero argentino." },
+  ],
+  rf_ars: [
+    { sym:"TX28",    label:"Boncer CER 2028",         tag:"Mismo tipo",     tagCls:"pill-green",  desc:"Extiende cobertura inflación 2 años." },
+    { sym:"CRTAFAA", label:"FCI Adcap Renta Fija ARS",tag:"Liquidez total", tagCls:"pill-purple", desc:"Flexible, rescate al día siguiente." },
+  ],
+  rf_usd: [
+    { sym:"GD35",    label:"Bono Global 2035",             tag:"Soberano USD",    tagCls:"pill-blue",   desc:"Legislación NY, más protección jurídica." },
+    { sym:"YMCXO",   label:"ON YPF 8,75%",                tag:"Corporativa USD",  tagCls:"pill-green",  desc:"Mejor tasa, emisor privado." },
+    { sym:"IOLDOLD", label:"FCI IOL Dólar Ahorro",        tag:"Liquidez inmediata",tagCls:"pill-purple", desc:"USD disponible cualquier día hábil." },
+  ],
+};
+
+const LOSS_ALTS = {
+  equity: [
+    { sym:"SPY", label:"CEDEAR S&P 500",   tag:"Diversificado", tagCls:"pill-purple", desc:"Equity USD, menos volatilidad que acciones AR." },
+    { sym:"KO",  label:"CEDEAR Coca-Cola", tag:"Defensivo",     tagCls:"pill-blue",   desc:"Muy estable, cae poco en momentos difíciles." },
+  ],
+  rf_ars: [
+    { sym:"TX28",    label:"Boncer CER 2028",         tag:"CER",           tagCls:"pill-green",  desc:"Cobertura inflación, más plazo." },
+    { sym:"CRTAFAA", label:"FCI Adcap Renta Fija ARS",tag:"Liquidez",      tagCls:"pill-purple", desc:"Salís sin perder más. Decidís después." },
+  ],
+  rf_usd: [
+    { sym:"IOLDOLD", label:"FCI IOL Dólar Ahorro",       tag:"Liquidez USD",  tagCls:"pill-purple", desc:"USD disponible sin plazo mínimo." },
+    { sym:"PRPEDOB", label:"FCI Premier Performance USD", tag:"Mayor renta",   tagCls:"pill-blue",   desc:"Algo más de rendimiento que IOLDOLD." },
+  ],
+};
+
+/* ═══════════════════════════════
+   FORMATO
+═══════════════════════════════ */
+const fmtARS = n => new Intl.NumberFormat("es-AR", { style:"currency", currency:"ARS", maximumFractionDigits:0 }).format(n);
+const fmtUSD = n => new Intl.NumberFormat("en-US", { style:"currency", currency:"USD", maximumFractionDigits:0 }).format(n);
+const fmtPct = n => (n * 100).toFixed(1) + "%";
+
+/* ═══════════════════════════════
+   AUTH
+═══════════════════════════════ */
+function getToken()       { return sessionStorage.getItem("iol_token"); }
+function setToken(t)      { sessionStorage.setItem("iol_token", t); }
+function clearToken()     { sessionStorage.removeItem("iol_token"); }
+
+async function login(user, pass) {
+  const body = new URLSearchParams({ username: user, password: pass, grant_type: "password", scope: "", client_id: "api-public" });
+  let res, rawText = "";
+  try {
+    res = await fetch(`${API_BASE}/token`, { method:"POST", body, headers: { "Content-Type": "application/x-www-form-urlencoded" } });
+  } catch(e) {
+    throw new Error("No se pudo conectar con el servidor.\nDetalle: " + e.message);
+  }
+  try { rawText = await res.text(); } catch(_) {}
+  let data = {};
+  try { data = JSON.parse(rawText); } catch(_) {}
+
+  if (!res.ok) {
+    // Mostrar diagnóstico completo para poder debuggear
+    const detail = data.error_description ?? data.message ?? data.error ?? rawText.slice(0, 120);
+    throw new Error(
+      `Error ${res.status} al autenticar con IOL.\n` +
+      (detail ? `Detalle: ${detail}\n` : "") +
+      `\nVerificá que el email y contraseña sean los que usás para entrar a invertironline.com`
+    );
+  }
+  if (!data.access_token) {
+    throw new Error("IOL respondió OK pero no devolvió token.\nRespuesta: " + rawText.slice(0, 200));
+  }
+  return data.access_token;
+}
+
+async function iolGet(path) {
+  const token = getToken();
+  const res = await fetch(`${API_BASE}${path}`, { headers: { Authorization: `Bearer ${token}` } });
+  if (res.status === 401) { clearToken(); showLogin(); throw new Error("Sesión expirada, reingresá"); }
+  if (!res.ok) throw new Error(`Error IOL ${res.status}: ${path}`);
+  return res.json();
+}
+
+/* ═══════════════════════════════
+   CLASIFICACIÓN
+═══════════════════════════════ */
+function classify(pos) {
+  const type = (pos.tipo || pos.tipoProducto || "").toUpperCase();
+  const sym  = (pos.simbolo || pos.ticker || "");
+  const cur  = (pos.moneda || pos.currency || "").toUpperCase();
+
+  if (type.includes("ACCION") && !type.includes("CEDEAR") && !type.includes("FCI")) return { bucket:"equity", subcat:"Acciones AR" };
+  if (type.includes("CEDEAR")) return { bucket:"equity", subcat:"CEDEARs" };
+  if (type.includes("TITULO") || type.includes("BONO") || type.includes("TIT.")) {
+    if (["AL30","GD35","GD30","GD38","GD41","GD46","AL35","AL41","AE38"].includes(sym))
+      return { bucket:"rf_usd", subcat:"Bono soberano USD" };
+    return { bucket:"rf_ars", subcat:"Bono CER/ARS" };
+  }
+  if (type.includes("ON") || type.includes("OBLIGACION")) return { bucket:"rf_usd", subcat:"ON corporativa" };
+  if (type.includes("FCI") || type.includes("FONDO")) {
+    if (cur === "USD" || sym.includes("USD") || ["PRPEDOB","IOLDOLD"].includes(sym)) return { bucket:"rf_usd", subcat:"FCI USD" };
+    if (sym === "CONIOLA") return { bucket:"equity", subcat:"FCI acciones AR" };
+    return { bucket:"rf_ars", subcat:"FCI renta fija ARS" };
+  }
+  return { bucket:"rf_ars", subcat:"Otro" };
+}
+
+/* ═══════════════════════════════
+   MEP
+═══════════════════════════════ */
+async function fetchMEP() {
+  const pairs = [["AL30","AL30D"],["GD30","GD30D"],["AL35","AL35D"],["GD35","GD35D"]];
+  for (const [ars, usd] of pairs) {
+    try {
+      const [qa, qu] = await Promise.all([
+        iolGet(`/api/v2/bcba/Titulos/${ars}/cotizacion?plazo=t1`),
+        iolGet(`/api/v2/bcba/Titulos/${usd}/cotizacion?plazo=t1`),
+      ]);
+      const pa = qa.ultimo ?? qa.ultimoPrecio ?? qa.price;
+      const pu = qu.ultimo ?? qu.ultimoPrecio ?? qu.price;
+      if (pa && pu && pu > 0) return { mep: pa / pu, source: `${ars}/${usd}` };
+    } catch(e) {}
+  }
+  return null;
+}
+
+/* ═══════════════════════════════
+   PORTAFOLIO
+═══════════════════════════════ */
+async function fetchPortfolio() {
+  // IOL devuelve el portafolio bajo /api/v2/portafolio/{pais}
+  const raw = await iolGet("/api/v2/portafolio/argentina");
+  // La forma puede variar: { activos: [...] } o { posiciones: [...] } o directamente un array
+  const items = raw.activos ?? raw.posiciones ?? raw.positions ?? (Array.isArray(raw) ? raw : []);
+  return items;
+}
+
+async function fetchBalance() {
+  return iolGet("/api/v2/saldo");
+}
+
+/* ═══════════════════════════════
+   NORMALIZACIÓN DE POSICIONES
+═══════════════════════════════ */
+function normalizePos(raw) {
+  // IOL puede devolver distintos nombres de campo según la versión de la API
+  const sym      = raw.simbolo ?? raw.ticker ?? raw.symbol ?? "—";
+  const qty      = parseFloat(raw.cantidad ?? raw.quantity ?? raw.qty ?? 0);
+  const price    = parseFloat(raw.ultimoPrecio ?? raw.ultimo ?? raw.precioActual ?? raw.unit_price ?? 0);
+  const change   = parseFloat(raw.variacionPorcentual ?? raw.variacion ?? raw.daily_change_pct ?? 0);
+  const currency = (raw.moneda ?? raw.currency ?? "ARS").toUpperCase();
+  const type     = raw.tipo ?? raw.tipoProducto ?? raw.asset?.type ?? "";
+  const desc     = raw.descripcion ?? raw.descripcionValuacion ?? raw.description ?? sym;
+  return { sym, qty, price, change, currency, type, desc, _raw: raw };
+}
+
+/* ═══════════════════════════════
+   RENDER
+═══════════════════════════════ */
+let _chartRef = null;
+
+async function loadData() {
+  const content = document.getElementById("mainContent");
+  document.getElementById("mepLabel").textContent = "MEP: cargando…";
+  content.innerHTML = `<div class="loading-screen"><div class="spinner spinning">↻</div><div>Conectando con IOL…</div></div>`;
+
+  let mep = null, mepSource = "—";
+  let rawPositions = [], balance = null;
+
+  try {
+    const [mepResult, positions, bal] = await Promise.all([
+      fetchMEP(),
+      fetchPortfolio(),
+      fetchBalance(),
+    ]);
+    mep          = mepResult ? mepResult.mep : null;
+    mepSource    = mepResult ? mepResult.source : "no disponible";
+    rawPositions = positions;
+    balance      = bal;
+  } catch(err) {
+    content.innerHTML = `
+      <div class="error-box">
+        <b>No pude conectar con IOL:</b><br>${err.message}<br><br>
+        Si el error dice "CORS" o "Failed to fetch", la API de IOL bloquea llamadas desde el browser.
+        En ese caso avisame y configuramos un proxy en 10 minutos.
+      </div>`;
+    document.getElementById("mepLabel").textContent = "MEP: error";
+    return;
+  }
+
+  if (!mep) {
+    document.getElementById("mepLabel").textContent = "MEP: no disponible";
+  } else {
+    document.getElementById("mepLabel").textContent = `MEP $${Math.round(mep).toLocaleString("es-AR")} · ${mepSource}`;
+  }
+
+  // Normalizar posiciones
+  const positions = rawPositions.map(p => {
+    const n = normalizePos(p);
+    const cls = classify(n);
+    const valueLocal = n.qty * n.price;
+    const valueARS = n.currency === "USD" ? valueLocal * (mep ?? 1) : valueLocal;
+    return { ...n, ...cls, valueARS };
+  });
+
+  // Balance
+  const cashARS = parseFloat(
+    balance?.saldoEnPesos?.disponible ?? balance?.arg_ars?.available?.t0 ?? balance?.arg_ars?.totals?.t0 ?? 0
+  );
+  const cashUSD = parseFloat(
+    balance?.saldoEnDolares?.disponible ?? balance?.arg_usd?.available?.t0 ?? balance?.arg_usd?.totals?.t0 ?? 0
+  );
+  const cashARSinARS = cashARS;
+  const cashUSDinARS = cashUSD * (mep ?? 1);
+
+  const totalARS = positions.reduce((s, p) => s + p.valueARS, 0) + cashARSinARS + cashUSDinARS;
+
+  // Buckets
+  const bkt = { equity: 0, rf_ars: 0, rf_usd: 0 };
+  positions.forEach(p => { bkt[p.bucket] += p.valueARS; });
+  bkt.rf_ars += cashARSinARS;
+  bkt.rf_usd += cashUSDinARS;
+
+  const mix = { equity: bkt.equity / totalARS, rf_ars: bkt.rf_ars / totalARS, rf_usd: bkt.rf_usd / totalARS };
+  const dev = { equity: mix.equity - TARGET.equity, rf_ars: mix.rf_ars - TARGET.rf_ars, rf_usd: mix.rf_usd - TARGET.rf_usd };
+
+  const sorted = [...positions].sort((a, b) => b.valueARS - a.valueARS);
+  const today  = new Date();
+
+  // ── HTML ──
+  content.innerHTML = `
+
+    <!-- KPIs -->
+    <div class="kpi-row" style="margin-bottom:${getComputedStyle(document.documentElement).getPropertyValue('--gap') || '12px'}">
+      <div class="card">
+        <div class="card-title">Total</div>
+        <div class="kpi-big">${fmtARS(totalARS)}</div>
+        <div class="kpi-sub">${mep ? "≈ " + fmtUSD(totalARS / mep) : "USD: MEP no disponible"}</div>
+      </div>
+      <div class="card">
+        <div class="card-title">Cash libre</div>
+        <div class="kpi-big">${fmtARS(cashARS)}</div>
+        <div class="kpi-sub">+ ${fmtUSD(cashUSD)} USD · T0</div>
+      </div>
+    </div>
+
+    <!-- Distribución -->
+    <div class="card">
+      <div class="card-title">Distribución vs objetivo</div>
+      <div class="mix-row">
+        ${[
+          { key:"equity", label:"Acciones", color:"#6366f1", target:30 },
+          { key:"rf_ars", label:"Pesos inflación", color:"#0ea5e9", target:30 },
+          { key:"rf_usd", label:"Dólares", color:"#10b981", target:40 },
+        ].map(({ key, label, color, target }) => {
+          const actual = mix[key] * 100;
+          const diff   = dev[key] * 100;
+          const status = Math.abs(diff) < 3 ? "✓" : diff > 0 ? `▲ +${diff.toFixed(1)}pp` : `▼ ${diff.toFixed(1)}pp`;
+          const stCls  = Math.abs(diff) < 3 ? "green" : "red";
+          return `<div class="mix-item">
+            <div class="mix-label">${label}</div>
+            <div class="mix-bar-bg">
+              <div class="mix-bar-fill" style="width:${Math.min(100, actual / 60 * 100)}%; background:${color};"></div>
+              <div class="mix-target-line" style="left:${(target / 60 * 100).toFixed(1)}%;"></div>
+            </div>
+            <div class="mix-pct">${actual.toFixed(1)}%</div>
+            <div class="mix-status ${stCls}">${status}</div>
+          </div>`;
+        }).join("")}
+      </div>
+      <div style="font-size:11px; color:var(--muted); margin-top:8px;">La línea gris = objetivo · Objetivo: 30% · 30% · 40%</div>
+    </div>
+
+    <!-- Recomendaciones -->
+    <div class="card">
+      <div class="card-title">Qué hacer ahora</div>
+      ${buildRecs(positions, totalARS, mep)}
+    </div>
+
+    <!-- Posiciones -->
+    <div class="card">
+      <div class="card-title">Tus posiciones (${positions.length})</div>
+      <div class="pos-list">
+        ${sorted.map(p => {
+          const pct    = p.valueARS / totalARS;
+          const overC  = pct * 100 > CONC_MAX;
+          const ch     = p.change || 0;
+          const venc   = VENCIMIENTOS[p.sym];
+          const [color]= p.bucket === "equity" ? ["#6366f1"] : p.bucket === "rf_ars" ? ["#0ea5e9"] : ["#10b981"];
+          return `<div class="pos-item">
+            <div>
+              <div class="pos-sym">${p.sym}</div>
+              <div class="pos-cat">${p.subcat}</div>
+              ${venc ? `<div class="pos-cat" style="color:#b45309;">vence ${venc.fecha}</div>` : ""}
+            </div>
+            <div style="flex:1; padding: 0 6px;">
+              <div class="pos-bar" style="background:${overC?'#dc2626':color}; width:${Math.min(100, pct*100*3)}%;"></div>
+              <div style="font-size:10px; color:var(--muted); margin-top:2px;">${fmtPct(pct)} del total${overC ? ' ⚠' : ''}</div>
+            </div>
+            <div class="pos-right">
+              <div class="pos-val">${fmtARS(p.valueARS)}</div>
+              <div class="pos-chg ${ch > 0 ? 'green' : ch < 0 ? 'red' : 'muted'}">${ch === 0 ? '—' : (ch > 0 ? '+' : '') + ch.toFixed(2) + '% hoy'}</div>
+            </div>
+          </div>`;
+        }).join("")}
+        <div class="pos-item">
+          <div><div class="pos-sym">Cash</div><div class="pos-cat">ARS + USD</div></div>
+          <div style="flex:1; padding:0 6px;"></div>
+          <div class="pos-right">
+            <div class="pos-val">${fmtARS(cashARSinARS + cashUSDinARS)}</div>
+            <div class="pos-chg muted">T0 disponible</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Glosario -->
+    <details class="glosario">
+      <summary>¿Qué significan los términos?</summary>
+      <div class="glosario-body">
+        <b>Acciones AR</b>: partes de empresas argentinas. Si suben, ganás.<br>
+        <b>CEDEAR</b>: acción extranjera (Apple, Amazon) comprada en pesos.<br>
+        <b>Bono CER</b>: le prestás plata al Estado en pesos y te devuelven ajustado por inflación.<br>
+        <b>Bono USD step-up</b>: le prestás al Estado en dólares. El cupón aumenta con los años.<br>
+        <b>ON</b>: bono de una empresa privada. Suele pagar más que los del Estado.<br>
+        <b>FCI</b>: fondo común — muchas personas juntan plata y la dividen entre varias inversiones.<br>
+        <b>MEP</b>: tipo de cambio dólar legal que surge de operar bonos.<br>
+        <b>Rollover</b>: cuando vence un bono, reinvertís en otro para no dejarlo sin trabajar.<br>
+        <b>Trimming</b>: vender solo una parte de una posición para bajar su peso en la cartera.
+      </div>
+    </details>
+
+    <div class="logout-row">
+      <button class="btn-logout" id="logoutBtn">Cerrar sesión</button>
+      <div style="font-size:11px; color:var(--muted); margin-top:4px;">Actualizado: ${new Date().toLocaleString("es-AR")}</div>
+    </div>
+  `;
+
+  document.getElementById("logoutBtn").addEventListener("click", () => { clearToken(); location.reload(); });
+}
+
+/* ═══════════════════════════════
+   RECOMENDACIONES
+═══════════════════════════════ */
+function buildOptHTML(opt) {
+  return `<div class="rec-opt">
+    <div class="rec-opt-sym">${opt.sym}</div>
+    <div style="flex:1;">
+      <div style="font-weight:600; font-size:12px;">${opt.label}</div>
+      <div class="rec-opt-desc">${opt.desc}</div>
+    </div>
+    <span class="rec-opt-tag pill ${opt.tagCls}">${opt.tag}</span>
+  </div>`;
+}
+
+function buildRecs(positions, totalARS, mep) {
+  const today = new Date();
+
+  // Concentración
+  const overConc = positions.filter(p => (p.valueARS / totalARS) * 100 > CONC_MAX).sort((a,b) => b.valueARS - a.valueARS);
+  let concHTML = "";
+  if (overConc.length === 0) {
+    concHTML = `<div class="alert alert-ok">Ninguna posición supera el ${CONC_MAX}%. Todo en orden.</div>`;
+  } else {
+    overConc.forEach(p => {
+      const pct    = p.valueARS / totalARS;
+      const excess = p.valueARS - (CONC_MAX / 100) * totalARS;
+      const alts   = (CONC_ALTS[p.bucket] || []).filter(a => a.sym !== p.sym).slice(0, 3);
+      concHTML += `<div class="rec-card warn">
+        <div class="rec-card-hd">${p.sym} — ${fmtPct(pct)} del total</div>
+        <div class="conc-bar-wrap">
+          <div class="conc-bar-bg">
+            <div class="conc-bar-fill" style="width:${Math.min(100, pct*100)}%; background:${pct*100 > CONC_MAX ? '#dc2626' : '#6366f1'};"></div>
+            <div class="conc-limit-line" style="left:${CONC_MAX}%;"></div>
+          </div>
+          <div class="conc-bar-labels"><span>0%</span><span>⬆ límite ${CONC_MAX}%</span><span>100%</span></div>
+        </div>
+        <div class="rec-card-sub">Exceso estimado: <b>${fmtARS(excess)}</b>. Si lo redistribuís, reducís el impacto de un mal día en este activo.</div>
+        ${alts.length ? `<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">¿Dónde poner el exceso?</div><div class="rec-opts">${alts.map(buildOptHTML).join("")}</div>` : ""}
+      </div>`;
+    });
+  }
+
+  // Vencimientos 180 días
+  const matItems = [];
+  positions.forEach(p => {
+    const v = VENCIMIENTOS[p.sym];
+    if (!v) return;
+    const [d,m,y] = v.fecha.split("/").map(Number);
+    const venc = new Date(y, m-1, d);
+    const days = Math.ceil((venc - today) / 86400000);
+    if (days >= 0 && days <= 180) matItems.push({ p, v, days });
+  });
+  matItems.sort((a,b) => a.days - b.days);
+
+  let matHTML = "";
+  if (matItems.length === 0) {
+    matHTML = `<div class="alert alert-ok">Sin vencimientos en los próximos 6 meses.</div>`;
+  } else {
+    matItems.forEach(({ p, v, days }) => {
+      const opts = ROLLOVER[p.sym] || [];
+      matHTML += `<div class="rec-card ${days <= 30 ? 'urgent' : 'warn'}">
+        <div class="rec-card-hd">${p.sym} — vence en ${days} días (${v.fecha})</div>
+        <div class="rec-card-sub"><b>${v.nota}</b> · Valor aprox: ${fmtARS(p.valueARS)}${mep ? ` (≈ ${fmtUSD(p.valueARS/mep)})` : ""}.<br>Decidí el rollover con al menos 2 semanas de anticipación.</div>
+        ${opts.length ? `<div style="font-size:11px;font-weight:600;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.04em;">Opciones de rollover</div><div class="rec-opts">${opts.map(buildOptHTML).join("")}</div>` : ""}
+      </div>`;
+    });
+  }
+
+  // Bajas fuertes (≥ 3% en el día)
+  const losers = positions.filter(p => (p.change || 0) <= -3).sort((a,b) => a.change - b.change);
+  let lossHTML = "";
+  if (losers.length === 0) {
+    lossHTML = `<div class="alert alert-ok">Ninguna posición bajó más del 3% hoy.</div>`;
+  } else {
+    lossHTML += `<div class="alert alert-info" style="margin-bottom:10px;">Una caída diaria fuerte no necesariamente significa "vender". Si se repite varios días o hay noticias de fondo, ahí sí evaluá rotar.</div>`;
+    losers.forEach(p => {
+      const alts = (LOSS_ALTS[p.bucket] || []).filter(a => a.sym !== p.sym).slice(0, 2);
+      lossHTML += `<div class="rec-card urgent">
+        <div class="rec-card-hd red">${p.sym}: ${p.change.toFixed(2)}% hoy</div>
+        <div class="rec-card-sub">${p.subcat} · Valor: ${fmtARS(p.valueARS)}</div>
+        ${alts.length ? `<div class="rec-opts">${alts.map(buildOptHTML).join("")}</div>` : ""}
+      </div>`;
+    });
+  }
+
+  const nConc = overConc.length;
+  const nMat  = matItems.length;
+  const nUrg  = matItems.filter(x => x.days <= 30).length;
+  const nLoss = losers.length;
+
+  return `
+    <div class="rec-tabs">
+      <button class="rec-tab active" data-tab="conc">
+        Concentración <span class="rec-badge ${nConc > 0 ? 'warm' : ''}">${nConc}</span>
+      </button>
+      <button class="rec-tab" data-tab="mat">
+        Vencimientos <span class="rec-badge ${nUrg > 0 ? 'hot' : nMat > 0 ? 'warm' : ''}">${nMat}</span>
+      </button>
+      <button class="rec-tab" data-tab="loss">
+        Bajas fuertes <span class="rec-badge ${nLoss > 0 ? 'hot' : ''}">${nLoss}</span>
+      </button>
+    </div>
+    <div id="tab-conc" class="rec-panel active">${concHTML}</div>
+    <div id="tab-mat"  class="rec-panel">${matHTML}</div>
+    <div id="tab-loss" class="rec-panel">${lossHTML}</div>
+  `;
+}
+
+/* ═══════════════════════════════
+   LOGIN FLOW
+═══════════════════════════════ */
+function showLogin() {
+  document.getElementById("loginScreen").style.display = "flex";
+  document.getElementById("app").style.display = "none";
+}
+function showApp() {
+  document.getElementById("loginScreen").style.display = "none";
+  document.getElementById("app").style.display = "block";
+}
+
+document.getElementById("loginBtn").addEventListener("click", async () => {
+  const btn  = document.getElementById("loginBtn");
+  const err  = document.getElementById("loginErr");
+  const user = document.getElementById("iolUser").value.trim();
+  const pass = document.getElementById("iolPass").value;
+  err.style.display = "none";
+  if (!user || !pass) { err.textContent = "Completá usuario y contraseña."; err.style.display = "block"; return; }
+  btn.disabled = true;
+  btn.textContent = "Conectando…";
+  try {
+    const token = await login(user, pass);
+    setToken(token);
+    showApp();
+    loadData();
+  } catch(e) {
+    err.textContent = e.message;
+    err.style.display = "block";
+    // Si es CORS, dar mensaje más claro
+    if (e.message.includes("fetch") || e.message.includes("CORS") || e.message.includes("network")) {
+      err.innerHTML = "No se pudo conectar con IOL.<br><small>Puede ser un problema de CORS. Avisale a tu agente para configurar el proxy.</small>";
+    }
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Entrar";
+  }
+});
+
+document.getElementById("iolPass").addEventListener("keydown", e => {
+  if (e.key === "Enter") document.getElementById("loginBtn").click();
+});
+
+document.getElementById("refreshBtn").addEventListener("click", loadData);
+
+// Tabs de recomendaciones (delegado al documento)
+document.addEventListener("click", e => {
+  if (!e.target.classList.contains("rec-tab")) return;
+  const card = e.target.closest(".card");
+  card.querySelectorAll(".rec-tab").forEach(b => b.classList.remove("active"));
+  card.querySelectorAll(".rec-panel").forEach(p => p.classList.remove("active"));
+  e.target.classList.add("active");
+  card.querySelector(`#tab-${e.target.dataset.tab}`).classList.add("active");
+});
+
+/* ═══════════════════════════════
+   INICIO
+═══════════════════════════════ */
+if (getToken()) { showApp(); loadData(); }
+else showLogin();
+</script>
+</body>
+</html>
